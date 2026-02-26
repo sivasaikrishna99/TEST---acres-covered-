@@ -77,7 +77,7 @@ synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 st.divider()
 
 # -----------------------
-# Shape Selection (Perfect Alignment Version)
+# Shape Selection (Perfect Alignment + True Radio)
 # -----------------------
 st.subheader("🗺 Select Field Shape")
 
@@ -90,34 +90,30 @@ shape_data = {
 
 shape_names = list(shape_data.keys())
 
-# Real radio (hidden label)
-selected_shape = st.radio(
-    label="",
-    options=shape_names,
-    horizontal=True,
-    key="selected_shape"
-)
+# Ensure default
+if "selected_shape" not in st.session_state:
+    st.session_state.selected_shape = shape_names[0]
 
-# Create perfectly matching columns
 cols = st.columns(len(shape_names))
 
 for shape, col in zip(shape_names, cols):
     with col:
-        # Highlight selected label
-        if shape == selected_shape:
-            st.markdown(
-                f"<div style='text-align:center; font-weight:600; color:#d32f2f'>{shape}</div>",
-                unsafe_allow_html=True
-            )
-        else:
-            st.markdown(
-                f"<div style='text-align:center;'>{shape}</div>",
-                unsafe_allow_html=True
-            )
+
+        # Radio with only one option in this column
+        selected = st.radio(
+            "",
+            options=[shape],
+            index=0 if st.session_state.selected_shape == shape else None,
+            key=f"radio_{shape}"
+        )
+
+        if selected:
+            st.session_state.selected_shape = shape
 
         st.image(shape_data[shape]["file"], width=130)
 
 # Apply turns
+selected_shape = st.session_state.selected_shape
 N = shape_data[selected_shape]["turns"]
 
 st.caption(f"Turns Applied: {N}")
@@ -151,6 +147,7 @@ st.caption(
     "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
 
 
 
