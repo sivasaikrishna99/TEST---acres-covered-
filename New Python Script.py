@@ -77,7 +77,7 @@ synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 st.divider()
 
 # -----------------------
-# Shape Selection (FIXED)
+# Shape Selection (Improved Visual Radio)
 # -----------------------
 st.subheader("🗺 Select Field Shape")
 
@@ -92,14 +92,34 @@ shape_names = list(shape_data.keys())
 
 cols = st.columns(len(shape_names))
 
-for i, shape in enumerate(shape_names):
-    with cols[i]:
+for shape, col in zip(shape_names, cols):
+    with col:
 
         is_selected = st.session_state.selected_shape == shape
-        circle = "🔘" if is_selected else "⚪"
 
-        if st.button(f"{circle} {shape}", key=f"shape_btn_{shape}"):
+        # Custom radio circle (red when selected)
+        circle_html = f"""
+        <div style="
+            width:18px;
+            height:18px;
+            border-radius:50%;
+            border:2px solid #d32f2f;
+            display:inline-block;
+            margin-right:6px;
+            vertical-align:middle;
+            position:relative;
+        ">
+            {"<div style='width:10px;height:10px;background:#d32f2f;border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'></div>" if is_selected else ""}
+        </div>
+        """
+
+        if st.button(shape, key=f"shape_btn_{shape}"):
             st.session_state.selected_shape = shape
+
+        st.markdown(
+            f"<div style='display:flex;align-items:center;justify-content:center;margin-top:-32px;'>{circle_html}<span style='font-size:14px;'>{shape}</span></div>",
+            unsafe_allow_html=True
+        )
 
         st.image(shape_data[shape]["file"], width=130)
 
@@ -139,3 +159,4 @@ st.caption(
     "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
