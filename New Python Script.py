@@ -76,11 +76,20 @@ synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 
 st.divider()
 
-# -----------------------
-# Shape Selection (Clickable Images Only)
-# -----------------------
-st.subheader("🗺 Select Field Shape")
+import streamlit as st
+import streamlit.components.v1 as components
+import base64
 
+# -----------------------
+# Helper to load image as base64
+# -----------------------
+def get_base64_image(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+# -----------------------
+# Shape Data
+# -----------------------
 shape_data = {
     "Square": {"file": "square.png", "turns": 16},
     "Rectangle": {"file": "rectangle.png", "turns": 12},
@@ -88,44 +97,85 @@ shape_data = {
     "L Shape": {"file": "lshape.png", "turns": 18},
 }
 
-shape_names = list(shape_data.keys())
-
 if "selected_shape" not in st.session_state:
-    st.session_state.selected_shape = shape_names[0]
+    st.session_state.selected_shape = "Square"
 
-cols = st.columns(len(shape_names))
+# Convert images to base64
+images = {
+    name: get_base64_image(data["file"])
+    for name, data in shape_data.items()
+}
 
-for shape, col in zip(shape_names, cols):
-    with col:
+# -----------------------
+# HTML + JS Component
+# -----------------------
+html_code = f"""
+<style>
+.container {{
+    display: flex;
+    gap: 20px;
+}}
 
-        is_selected = st.session_state.selected_shape == shape
-        border = "4px solid #d32f2f" if is_selected else "2px solid transparent"
+.shape {{
+    text-align: center;
+    cursor: pointer;
+}}
 
-        # Clickable image
-        if st.button("", key=f"img_{shape}", use_container_width=True):
-            st.session_state.selected_shape = shape
-            st.rerun()
+.shape img {{
+    width: 140px;
+    border-radius: 10px;
+    border: 4px solid transparent;
+}}
 
-        st.markdown(
-            f"""
-            <div style="text-align:center;">
-                <img src="{shape_data[shape]['file']}"
-                     style="width:130px;
-                            border:{border};
-                            border-radius:8px;">
-                <div style="margin-top:6px; font-weight:500;">
-                    {shape}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+.shape.selected img {{
+    border: 4px solid #d32f2f;
+}}
 
-# Apply turns
+.label {{
+    margin-top: 6px;
+    font-weight: 500;
+}}
+</style>
+
+<div class="container">
+"""
+
+for name, img in images.items():
+    selected_class = "selected" if st.session_state.selected_shape == name else ""
+    html_code += f"""
+    <div class="shape {selected_class}" onclick="selectShape('{name}')">
+        <img src="data:image/png;base64,{img}">
+        <div class="label">{name}</div>
+    </div>
+    """
+
+html_code += """
+</div>
+
+<script>
+function selectShape(shape) {
+    const url = new URL(window.location);
+    url.searchParams.set("shape", shape);
+    window.location = url;
+}
+</script>
+"""
+
+components.html(html_code, height=250)
+
+# -----------------------
+# Capture selection from URL
+# -----------------------
+query_params = st.query_params
+
+if "shape" in query_params:
+    st.session_state.selected_shape = query_params["shape"]
+
 selected_shape = st.session_state.selected_shape
 N = shape_data[selected_shape]["turns"]
 
-st.caption(f"Turns Applied: {N}")
+st.write("Selected Shape:", selected_shape)
+st.write("Turns Applied:", N)
 # -----------------------
 # Calculations (UNCHANGED)
 # -----------------------
@@ -156,6 +206,7 @@ st.caption(
     "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
 
 
 
