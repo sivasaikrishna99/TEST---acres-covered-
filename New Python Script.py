@@ -77,7 +77,7 @@ synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 st.divider()
 
 # -----------------------
-# Shape Selection (Image-Based True Radio)
+# Shape Selection
 # -----------------------
 st.subheader("🗺 Select Field Shape")
 
@@ -90,31 +90,12 @@ shape_data = {
 
 shape_names = list(shape_data.keys())
 
-# ONE true radio (controls everything)
 selected_shape = st.radio(
     label="",
-    options=shape_names,# -----------------------
-# Shape Selection (FINAL CLEAN VERSION)
-# -----------------------
-st.subheader("🗺 Select Field Shape")
-
-shape_data = {
-    "Square": {"file": "square.png", "turns": 16},
-    "Rectangle": {"file": "rectangle.png", "turns": 12},
-    "Skewed": {"file": "skewed.png", "turns": 11},
-    "L Shape": {"file": "lshape.png", "turns": 18},
-}
-
-shape_names = list(shape_data.keys())
-
-# ONE real radio (hidden label)
-selected_shape = st.radio(
-    "",
     options=shape_names,
     key="selected_shape"
 )
 
-# Layout images aligned with radio options
 cols = st.columns(len(shape_names))
 
 for shape, col in zip(shape_names, cols):
@@ -125,9 +106,7 @@ for shape, col in zip(shape_names, cols):
             unsafe_allow_html=True
         )
 
-# Apply turns
 N = shape_data[selected_shape]["turns"]
-
 st.caption(f"Turns Applied: {N}")
 # -----------------------
 # Calculations (UNCHANGED)
@@ -159,6 +138,7 @@ st.caption(
     "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
 
 
 
