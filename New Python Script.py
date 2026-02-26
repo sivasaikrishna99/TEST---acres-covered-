@@ -21,6 +21,10 @@ for k, v in defaults.items():
     st.session_state.setdefault(f"{k}_slider", v)
     st.session_state.setdefault(f"{k}_input", v)
 
+# Default selected shape
+if "selected_shape" not in st.session_state:
+    st.session_state.selected_shape = "Square"
+
 # -----------------------
 # Sync functions
 # -----------------------
@@ -74,31 +78,31 @@ synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 st.divider()
 
 # -----------------------
-# Shape Selection (Image Based)
+# Shape Selection (Clickable Image Cards)
 # -----------------------
 st.subheader("🗺 Select Field Shape")
 
 shape_data = {
-    "Square": {"file": "images/square.png", "turns": 16},
-    "Rectangle": {"file": "images/rectangle.png", "turns": 12},
-    "Skewed Rectangle": {"file": "images/skewed.png", "turns": 11},
-    "L Shape": {"file": "images/lshape.png", "turns": 18},
+    "Square": {"file": "square.png", "turns": 16},
+    "Rectangle": {"file": "rectangle.png", "turns": 12},
+    "Skewed": {"file": "skewed.png", "turns": 11},
+    "L Shape": {"file": "lshape.png", "turns": 18},
 }
 
-shape_names = list(shape_data.keys())
+cols = st.columns(2)
 
-selected_shape = st.radio(
-    "Choose shape:",
-    shape_names,
-    horizontal=True
-)
+i = 0
+for shape_name, data in shape_data.items():
+    with cols[i % 2]:
+        st.image(data["file"], use_container_width=True)
+        if st.button(f"Select", key=shape_name):
+            st.session_state.selected_shape = shape_name
+    i += 1
 
-st.image(shape_data[selected_shape]["file"], use_container_width=True)
-
-# Assign turns automatically
+selected_shape = st.session_state.selected_shape
 N = shape_data[selected_shape]["turns"]
 
-st.caption(f"Number of Turns Applied: {N}")
+st.success(f"Selected Shape: {selected_shape} | Turns Applied: {N}")
 
 st.divider()
 
@@ -110,7 +114,7 @@ w = st.session_state.width
 flow = st.session_state.flow
 tank = st.session_state.tank
 
-turn_loss_percent = 2.0  # FIXED
+turn_loss_percent = 2.0
 efficiency_per_turn = 1 - (turn_loss_percent / 100)
 
 # Spray time (seconds)
