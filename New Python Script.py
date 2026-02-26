@@ -93,27 +93,29 @@ shape_names = list(shape_data.keys())
 if "selected_shape" not in st.session_state:
     st.session_state.selected_shape = shape_names[0]
 
-# Main radio (handles selection state cleanly)
-selected_shape = st.radio(
-    "",
-    shape_names,
-    index=shape_names.index(st.session_state.selected_shape),
-    horizontal=True,
-)
-
-st.session_state.selected_shape = selected_shape
-
-# Display aligned images under radio
 cols = st.columns(len(shape_names))
 
-for col, shape in zip(cols, shape_names):
-    with col:
-        st.image(shape_data[shape]["file"], width=140)
+for i, shape in enumerate(shape_names):
+    with cols[i]:
+        # Radio circle
+        if st.radio(
+            label="",
+            options=[shape],
+            index=0 if st.session_state.selected_shape == shape else None,
+            key=f"shape_{shape}"
+        ):
+            st.session_state.selected_shape = shape
+
+        # Image
+        st.image(shape_data[shape]["file"], width=130)
+
+        # Centered name
         st.markdown(
-            f"<div style='text-align: center; font-size: 14px;'>{shape}</div>",
+            f"<div style='text-align:center; font-size:14px;'>{shape}</div>",
             unsafe_allow_html=True
         )
 
+selected_shape = st.session_state.selected_shape
 N = shape_data[selected_shape]["turns"]
 
 st.caption(f"Turns Applied: {N}")
@@ -148,5 +150,6 @@ st.caption(
     "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
 
 
