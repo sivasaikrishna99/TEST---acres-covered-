@@ -1,101 +1,139 @@
 import streamlit as st
-import numpy as np
 
-st.title("Drone Spray Coverage Calculator")
+st.set_page_config(page_title="Agri Drone Area Calculator", layout="centered")
+st.title("🚁 Agricultural Drone Area Coverage Calculator")
+st.caption("Single-turn efficiency model (Turn loss fixed at 2%)")
 
-# -----------------------------
-# INPUTS (UNCHANGED UI)
-# -----------------------------
+st.divider()
 
-speed = st.slider("Speed (m/s)", 1.0, 8.0, 5.0, 0.1)
+# -----------------------
+# Defaults
+# -----------------------
+defaults = {
+    "speed": 5.0,
+    "width": 5.5,
+    "flow": 3.0,
+    "tank": 10.0,
+}
 
-flowrate = st.number_input("Flowrate (L/min)", value=2.0)
+for k, v in defaults.items():
+    st.session_state.setdefault(k, v)
+    st.session_state.setdefault(f"{k}_slider", v)
+    st.session_state.setdefault(f"{k}_input", v)
 
-swath = st.number_input("Swath Width (m)", value=5.5)
+# -----------------------
+# Sync functions
+# -----------------------
+def slider_changed(name):
+    val = st.session_state[f"{name}_slider"]
+    st.session_state[name] = val
+    st.session_state[f"{name}_input"] = val
 
-turns = st.number_input("Number of Turns", value=12)
+def input_changed(name):
+    val = st.session_state[f"{name}_input"]
+    st.session_state[name] = val
+    st.session_state[f"{name}_slider"] = val
 
-tank_capacity = st.number_input("Tank Capacity (L)", value=15.0)
+# -----------------------
+# Synced input widget
+# -----------------------
+def synced_input(label, name, minv, maxv, step, fmt=None):
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        st.slider(
+            label,
+            min_value=minv,
+            max_value=maxv,
+            step=step,
+            value=st.session_state[name],
+            key=f"{name}_slider",
+            on_change=slider_changed,
+            args=(name,)
+        )
+    with c2:
+        st.number_input(
+            " ",
+            min_value=minv,
+            max_value=maxv,
+            step=step,
+            format=fmt,
+            value=st.session_state[name],
+            key=f"{name}_input",
+            on_change=input_changed,
+            args=(name,)
+        )
 
-# -----------------------------
-# Visual Shape Selection
-# -----------------------------
+# -----------------------
+# Inputs
+# -----------------------
+synced_input("Speed (m/s)", "speed", 0.5, 15.0, 0.1)
+synced_input("Swath width (m)", "width", 0.5, 15.0, 0.1)
+synced_input("Flow rate (kg/min)", "flow", 0.1, 20.0, 0.001, "%.4f")
+synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 
-shape = st.radio(
-    "Select Field Shape",
-    ["Square", "Rectangle", "Long Rectangle",
-     "Trapezium", "Rhombus", "Skewed Rectangle"],
+st.divider()
+
+# -----------------------
+# Shape Selection (Image Based)
+# -----------------------
+st.subheader("🗺 Select Field Shape")
+
+shape_data = {
+    "Square": {"file": "images/square.png", "turns": 16},
+    "Rectangle": {"file": "images/rectangle.png", "turns": 12},
+    "Skewed Rectangle": {"file": "images/skewed.png", "turns": 11},
+    "L Shape": {"file": "images/lshape.png", "turns": 18},
+}
+
+shape_names = list(shape_data.keys())
+
+selected_shape = st.radio(
+    "Choose shape:",
+    shape_names,
     horizontal=True
 )
 
-# -----------------------------
-# Ideal Area Calculation (UNCHANGED LOGIC STYLE)
-# -----------------------------
+st.image(shape_data[selected_shape]["file"], use_container_width=True)
 
-# Spray rate per second
-flow_per_sec = flowrate / 60
+# Assign turns automatically
+N = shape_data[selected_shape]["turns"]
 
-# Area sprayed per second
-area_per_sec = speed * swath
+st.caption(f"Number of Turns Applied: {N}")
 
-# Volume per square meter
-vol_per_m2 = flow_per_sec / area_per_sec
+st.divider()
 
-# Total sprayable area in m2
-ideal_area_m2 = tank_capacity / vol_per_m2
+# -----------------------
+# Calculations
+# -----------------------
+v = st.session_state.speed
+w = st.session_state.width
+flow = st.session_state.flow
+tank = st.session_state.tank
 
-# Convert to acre
-ideal_area = ideal_area_m2 / 4046.86
+turn_loss_percent = 2.0  # FIXED
+efficiency_per_turn = 1 - (turn_loss_percent / 100)
 
-# -----------------------------
-# Shape Factors (Geometry Model)
-# -----------------------------
+# Spray time (seconds)
+t_spray = (tank / flow) * 60
 
-shape_factors = {
-    "Square": 1.0,
-    "Rectangle": 1.4,
-    "Long Rectangle": 1.8,
-    "Trapezium": 1.6,
-    "Rhombus": 1.3,
-    "Skewed Rectangle": 1.7
-}
+# Ideal area (acres)
+A_ideal = (v * w * t_spray) / 4046.86
 
-Sf_base = shape_factors[shape]
+# Real area
+A_real = A_ideal * (efficiency_per_turn ** N)
 
-# Slight adjustment using turns
-Sf = Sf_base * (1 + 0.015 * (turns - 10))
+# -----------------------
+# Output
+# -----------------------
+st.subheader("📊 Results")
 
-# Effective straight length
-L_eff = np.sqrt(ideal_area_m2 * Sf)
+c1, c2 = st.columns(2)
 
-# -----------------------------
-# Turn Physics Model
-# -----------------------------
+with c2:
+    st.metric("Actual Area (acre)", f"{A_real:.4f}")
 
-R = 5        # realistic drone turn radius (m)
-V_turn = 3   # slower turning speed (m/s)
-
-K = np.pi * R * (speed / V_turn)
-
-eta = L_eff / (L_eff + K)
-
-# -----------------------------
-# Actual Area
-# -----------------------------
-
-actual_area = ideal_area * eta
-
-# -----------------------------
-# RESULTS
-# -----------------------------
-
-st.subheader("Results")
-
-st.write(f"Ideal Area (acre)")
-st.write(f"{ideal_area:.3f}")
-
-st.write(f"Actual Field Area (acre)")
-st.write(f"{actual_area:.3f}")
-
-st.write(f"Field Efficiency")
-st.write(f"{eta:.3f}")
+st.caption(
+    "Model:\n"
+    "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
+    "Turn loss fixed at 2% per turn."
+)
