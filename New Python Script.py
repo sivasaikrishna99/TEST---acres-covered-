@@ -21,7 +21,6 @@ for k, v in defaults.items():
     st.session_state.setdefault(f"{k}_slider", v)
     st.session_state.setdefault(f"{k}_input", v)
 
-# Default selected shape
 if "selected_shape" not in st.session_state:
     st.session_state.selected_shape = "Square"
 
@@ -78,7 +77,7 @@ synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 st.divider()
 
 # -----------------------
-# Shape Selection (Clickable Image Cards)
+# Shape Selection
 # -----------------------
 st.subheader("🗺 Select Field Shape")
 
@@ -89,20 +88,29 @@ shape_data = {
     "L Shape": {"file": "lshape.png", "turns": 18},
 }
 
-cols = st.columns(2)
+shape_names = list(shape_data.keys())
 
-i = 0
-for shape_name, data in shape_data.items():
-    with cols[i % 2]:
-        st.image(data["file"], use_container_width=True)
-        if st.button(f"Select", key=shape_name):
-            st.session_state.selected_shape = shape_name
-    i += 1
+# Radio gives circle + dot selection
+selected_shape = st.radio(
+    "",
+    shape_names,
+    index=shape_names.index(st.session_state.selected_shape),
+    horizontal=True,
+)
 
-selected_shape = st.session_state.selected_shape
+st.session_state.selected_shape = selected_shape
+
+# Show images side by side (small & equal size)
+cols = st.columns(len(shape_names))
+
+for col, shape in zip(cols, shape_names):
+    with col:
+        st.image(shape_data[shape]["file"], width=150)
+        st.caption(shape)
+
 N = shape_data[selected_shape]["turns"]
 
-st.success(f"Selected Shape: {selected_shape} | Turns Applied: {N}")
+st.caption(f"Turns Applied: {N}")
 
 st.divider()
 
@@ -117,13 +125,8 @@ tank = st.session_state.tank
 turn_loss_percent = 2.0
 efficiency_per_turn = 1 - (turn_loss_percent / 100)
 
-# Spray time (seconds)
 t_spray = (tank / flow) * 60
-
-# Ideal area (acres)
 A_ideal = (v * w * t_spray) / 4046.86
-
-# Real area
 A_real = A_ideal * (efficiency_per_turn ** N)
 
 # -----------------------
