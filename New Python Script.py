@@ -1,11 +1,9 @@
 import streamlit as st
 
-# -----------------------
-# Page Setup
-# -----------------------
 st.set_page_config(page_title="Agri Drone Area Calculator", layout="centered")
 st.title("🚁 Agricultural Drone Area Coverage Calculator")
 st.caption("Single-turn efficiency model (Turn loss fixed at 2%)")
+
 st.divider()
 
 # -----------------------
@@ -27,7 +25,7 @@ if "selected_shape" not in st.session_state:
     st.session_state.selected_shape = "Square"
 
 # -----------------------
-# Sync Functions
+# Sync functions
 # -----------------------
 def slider_changed(name):
     val = st.session_state[f"{name}_slider"]
@@ -40,7 +38,7 @@ def input_changed(name):
     st.session_state[f"{name}_slider"] = val
 
 # -----------------------
-# Synced Input Widget
+# Synced input widget
 # -----------------------
 def synced_input(label, name, minv, maxv, step, fmt=None):
     c1, c2 = st.columns([2, 1])
@@ -77,11 +75,12 @@ synced_input("Flow rate (kg/min)", "flow", 0.1, 20.0, 0.001, "%.4f")
 synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 
 st.divider()
-st.subheader("🗺 Select Field Shape")
 
 # -----------------------
-# Shape Data
+# Shape Selection (Proper Single Radio)
 # -----------------------
+st.subheader("🗺 Select Field Shape")
+
 shape_data = {
     "Square": {"file": "square.png", "turns": 16},
     "Rectangle": {"file": "rectangle.png", "turns": 12},
@@ -90,53 +89,23 @@ shape_data = {
 }
 
 shape_names = list(shape_data.keys())
-cols = st.columns(len(shape_names))
 
-# -----------------------
-# Image Selector (Stable)
-# -----------------------
+selected_shape = st.radio(
+    "",
+    options=shape_names,
+    horizontal=True,
+    key="selected_shape"
+)
+
+# Show images aligned under labels
+cols = st.columns(len(shape_names))
 for shape, col in zip(shape_names, cols):
     with col:
-        is_selected = st.session_state.selected_shape == shape
+        st.image(shape_data[shape]["file"], width=130)
 
-        border = "4px solid #d32f2f" if is_selected else "2px solid transparent"
-
-        # Clickable button (hidden style)
-        if st.button("", key=f"btn_{shape}", use_container_width=True):
-            st.session_state.selected_shape = shape
-
-        # Image with border
-        st.markdown(
-            f"""
-            <div style="text-align:center;">
-                <div style="
-                    border:{border};
-                    border-radius:10px;
-                    padding:4px;
-                ">
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.image(shape_data[shape]["file"], use_column_width=True)
-
-        st.markdown(
-            f"""
-                </div>
-                <div style="margin-top:6px; font-weight:500;">
-                    {shape}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-selected_shape = st.session_state.selected_shape
 N = shape_data[selected_shape]["turns"]
 
-st.write("Selected Shape:", selected_shape)
-st.write("Turns Applied:", N)
-
+st.caption(f"Turns Applied: {N}")
 # -----------------------
 # Calculations
 # -----------------------
@@ -155,7 +124,6 @@ A_real = A_ideal * (efficiency_per_turn ** N)
 # -----------------------
 # Output
 # -----------------------
-st.divider()
 st.subheader("📊 Results")
 
 c1, c2 = st.columns(2)
