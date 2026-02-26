@@ -77,7 +77,7 @@ synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 st.divider()
 
 # -----------------------
-# Shape Selection (Professional Clickable Cards)
+# Shape Selection (Clickable Images Only)
 # -----------------------
 st.subheader("🗺 Select Field Shape")
 
@@ -90,7 +90,6 @@ shape_data = {
 
 shape_names = list(shape_data.keys())
 
-# Ensure default selection
 if "selected_shape" not in st.session_state:
     st.session_state.selected_shape = shape_names[0]
 
@@ -100,36 +99,27 @@ for shape, col in zip(shape_names, cols):
     with col:
 
         is_selected = st.session_state.selected_shape == shape
+        border = "4px solid #d32f2f" if is_selected else "2px solid transparent"
 
-        border_color = "#d32f2f" if is_selected else "#cccccc"
-        background = "#fff5f5" if is_selected else "white"
-
-        # Card container
-        st.markdown(
-            f"""
-            <div style="
-                border: 3px solid {border_color};
-                border-radius: 10px;
-                padding: 10px;
-                background-color: {background};
-                text-align: center;
-            ">
-            """,
-            unsafe_allow_html=True
-        )
-
-        if st.button("Select", key=f"card_{shape}", use_container_width=True):
+        # Clickable image
+        if st.button("", key=f"img_{shape}", use_container_width=True):
             st.session_state.selected_shape = shape
             st.rerun()
 
-        st.image(shape_data[shape]["file"], width=130)
-
         st.markdown(
-            f"<div style='margin-top:5px; font-weight:500;'>{shape}</div>",
+            f"""
+            <div style="text-align:center;">
+                <img src="{shape_data[shape]['file']}"
+                     style="width:130px;
+                            border:{border};
+                            border-radius:8px;">
+                <div style="margin-top:6px; font-weight:500;">
+                    {shape}
+                </div>
+            </div>
+            """,
             unsafe_allow_html=True
         )
-
-        st.markdown("</div>", unsafe_allow_html=True)
 
 # Apply turns
 selected_shape = st.session_state.selected_shape
@@ -166,6 +156,7 @@ st.caption(
     "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
 
 
 
