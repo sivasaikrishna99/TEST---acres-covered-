@@ -77,7 +77,7 @@ synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 st.divider()
 
 # -----------------------
-# Shape Selection (Instant Update Fix)
+# Shape Selection (Proper Single Radio)
 # -----------------------
 st.subheader("🗺 Select Field Shape")
 
@@ -90,32 +90,19 @@ shape_data = {
 
 shape_names = list(shape_data.keys())
 
-# ---- HANDLE CLICK FIRST ----
-for shape in shape_names:
-    if st.session_state.get(f"clicked_{shape}", False):
-        st.session_state.selected_shape = shape
-        st.session_state[f"clicked_{shape}"] = False
+selected_shape = st.radio(
+    "",
+    options=shape_names,
+    horizontal=True,
+    key="selected_shape"
+)
 
-# ---- RENDER UI ----
+# Show images aligned under labels
 cols = st.columns(len(shape_names))
-
 for shape, col in zip(shape_names, cols):
     with col:
-
-        is_selected = st.session_state.selected_shape == shape
-        circle = "🔴" if is_selected else "⚪"
-
-        if st.button(
-            f"{circle}  {shape}",
-            key=f"btn_{shape}",
-            use_container_width=True
-        ):
-            st.session_state[f"clicked_{shape}"] = True
-
         st.image(shape_data[shape]["file"], width=130)
 
-# Apply turns
-selected_shape = st.session_state.selected_shape
 N = shape_data[selected_shape]["turns"]
 
 st.caption(f"Turns Applied: {N}")
@@ -149,6 +136,7 @@ st.caption(
     "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
 
 
 
