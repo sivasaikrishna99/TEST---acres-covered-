@@ -77,7 +77,7 @@ synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 st.divider()
 
 # -----------------------
-# Shape Selection
+# Shape Selection (FIXED)
 # -----------------------
 st.subheader("🗺 Select Field Shape")
 
@@ -90,38 +90,27 @@ shape_data = {
 
 shape_names = list(shape_data.keys())
 
-if "selected_shape" not in st.session_state:
-    st.session_state.selected_shape = shape_names[0]
-
 cols = st.columns(len(shape_names))
 
 for i, shape in enumerate(shape_names):
     with cols[i]:
-        # Radio circle
-        if st.radio(
-            label="",
-            options=[shape],
-            index=0 if st.session_state.selected_shape == shape else None,
-            key=f"shape_{shape}"
-        ):
+
+        is_selected = st.session_state.selected_shape == shape
+        circle = "🔘" if is_selected else "⚪"
+
+        if st.button(f"{circle} {shape}", key=f"shape_btn_{shape}"):
             st.session_state.selected_shape = shape
 
-        # Image
         st.image(shape_data[shape]["file"], width=130)
 
-        # Centered name
-        st.markdown(
-            f"<div style='text-align:center; font-size:14px;'>{shape}</div>",
-            unsafe_allow_html=True
-        )
-
+# Apply turns based on selected shape
 selected_shape = st.session_state.selected_shape
 N = shape_data[selected_shape]["turns"]
 
 st.caption(f"Turns Applied: {N}")
 
 # -----------------------
-# Calculations
+# Calculations (UNCHANGED)
 # -----------------------
 v = st.session_state.speed
 w = st.session_state.width
@@ -150,6 +139,3 @@ st.caption(
     "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
     "Turn loss fixed at 2% per turn."
 )
-
-
-
