@@ -1,6 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
-import base64
 
 # -----------------------
 # Page Setup
@@ -82,13 +80,6 @@ st.divider()
 st.subheader("🗺 Select Field Shape")
 
 # -----------------------
-# Helper: Base64 Image
-# -----------------------
-def get_base64_image(path):
-    with open(path, "rb") as f:
-        return base64.b64encode(f.read()).decode()
-
-# -----------------------
 # Shape Data
 # -----------------------
 shape_data = {
@@ -98,75 +89,47 @@ shape_data = {
     "L Shape": {"file": "lshape.png", "turns": 18},
 }
 
-# -----------------------
-# Handle Query Parameter FIRST
-# -----------------------
-query_params = st.query_params
-if "shape" in query_params:
-    shape_from_url = query_params["shape"]
-    if shape_from_url in shape_data:
-        st.session_state.selected_shape = shape_from_url
+shape_names = list(shape_data.keys())
+cols = st.columns(len(shape_names))
 
 # -----------------------
-# Encode Images
+# Image Selector (Stable)
 # -----------------------
-images = {
-    name: get_base64_image(data["file"])
-    for name, data in shape_data.items()
-}
+for shape, col in zip(shape_names, cols):
+    with col:
+        is_selected = st.session_state.selected_shape == shape
 
-# -----------------------
-# HTML UI
-# -----------------------
-html = """
-<style>
-.container {
-    display: flex;
-    gap: 25px;
-}
-.shape {
-    text-align: center;
-    cursor: pointer;
-}
-.shape img {
-    width: 140px;
-    border-radius: 10px;
-    border: 4px solid transparent;
-}
-.shape.selected img {
-    border: 4px solid #d32f2f;
-}
-.label {
-    margin-top: 6px;
-    font-weight: 500;
-}
-</style>
+        border = "4px solid #d32f2f" if is_selected else "2px solid transparent"
 
-<div class="container">
-"""
+        # Clickable button (hidden style)
+        if st.button("", key=f"btn_{shape}", use_container_width=True):
+            st.session_state.selected_shape = shape
 
-for name, img in images.items():
-    selected_class = "selected" if st.session_state.selected_shape == name else ""
-    html += f"""
-    <div class="shape {selected_class}" onclick="selectShape('{name}')">
-        <img src="data:image/png;base64,{img}">
-        <div class="label">{name}</div>
-    </div>
-    """
+        # Image with border
+        st.markdown(
+            f"""
+            <div style="text-align:center;">
+                <div style="
+                    border:{border};
+                    border-radius:10px;
+                    padding:4px;
+                ">
+            """,
+            unsafe_allow_html=True
+        )
 
-html += """
-</div>
+        st.image(shape_data[shape]["file"], use_column_width=True)
 
-<script>
-function selectShape(shape) {
-    const url = new URL(window.location);
-    url.searchParams.set("shape", shape);
-    window.location.href = url.toString();
-}
-</script>
-"""
-
-components.html(html, height=270)
+        st.markdown(
+            f"""
+                </div>
+                <div style="margin-top:6px; font-weight:500;">
+                    {shape}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 selected_shape = st.session_state.selected_shape
 N = shape_data[selected_shape]["turns"]
