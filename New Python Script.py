@@ -1,9 +1,13 @@
 import streamlit as st
+import streamlit.components.v1 as components
+import base64
 
+# -----------------------
+# Page Setup
+# -----------------------
 st.set_page_config(page_title="Agri Drone Area Calculator", layout="centered")
 st.title("🚁 Agricultural Drone Area Coverage Calculator")
 st.caption("Single-turn efficiency model (Turn loss fixed at 2%)")
-
 st.divider()
 
 # -----------------------
@@ -25,7 +29,7 @@ if "selected_shape" not in st.session_state:
     st.session_state.selected_shape = "Square"
 
 # -----------------------
-# Sync functions
+# Sync Functions
 # -----------------------
 def slider_changed(name):
     val = st.session_state[f"{name}_slider"]
@@ -38,7 +42,7 @@ def input_changed(name):
     st.session_state[f"{name}_slider"] = val
 
 # -----------------------
-# Synced input widget
+# Synced Input Widget
 # -----------------------
 def synced_input(label, name, minv, maxv, step, fmt=None):
     c1, c2 = st.columns([2, 1])
@@ -74,13 +78,11 @@ synced_input("Swath width (m)", "width", 0.5, 15.0, 0.1)
 synced_input("Flow rate (kg/min)", "flow", 0.1, 20.0, 0.001, "%.4f")
 synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 
-import streamlit as st
-import streamlit.components.v1 as components
-import base64
-import json
+st.divider()
+st.subheader("🗺 Select Field Shape")
 
 # -----------------------
-# Helper: Convert image to base64
+# Helper: Base64 Image
 # -----------------------
 def get_base64_image(path):
     with open(path, "rb") as f:
@@ -96,96 +98,84 @@ shape_data = {
     "L Shape": {"file": "lshape.png", "turns": 18},
 }
 
-if "selected_shape" not in st.session_state:
-    st.session_state.selected_shape = "Square"
+# -----------------------
+# Handle Query Parameter FIRST
+# -----------------------
+query_params = st.query_params
+if "shape" in query_params:
+    shape_from_url = query_params["shape"]
+    if shape_from_url in shape_data:
+        st.session_state.selected_shape = shape_from_url
 
-# Encode images
+# -----------------------
+# Encode Images
+# -----------------------
 images = {
     name: get_base64_image(data["file"])
     for name, data in shape_data.items()
 }
 
 # -----------------------
-# HTML Component
+# HTML UI
 # -----------------------
-html_code = f"""
-<!DOCTYPE html>
-<html>
-<head>
+html = """
 <style>
-.container {{
+.container {
     display: flex;
-    gap: 20px;
-}}
-
-.shape {{
+    gap: 25px;
+}
+.shape {
     text-align: center;
     cursor: pointer;
-}}
-
-.shape img {{
+}
+.shape img {
     width: 140px;
     border-radius: 10px;
     border: 4px solid transparent;
-}}
-
-.shape.selected img {{
+}
+.shape.selected img {
     border: 4px solid #d32f2f;
-}}
-
-.label {{
+}
+.label {
     margin-top: 6px;
     font-weight: 500;
-}}
+}
 </style>
-</head>
-<body>
 
 <div class="container">
 """
 
 for name, img in images.items():
     selected_class = "selected" if st.session_state.selected_shape == name else ""
-    html_code += f"""
+    html += f"""
     <div class="shape {selected_class}" onclick="selectShape('{name}')">
         <img src="data:image/png;base64,{img}">
         <div class="label">{name}</div>
     </div>
     """
 
-html_code += f"""
+html += """
 </div>
 
 <script>
-const streamlit = window.parent;
-
-function selectShape(shape) {{
-    streamlit.postMessage({{
-        type: "streamlit:setComponentValue",
-        value: shape
-    }}, "*");
-}}
+function selectShape(shape) {
+    const url = new URL(window.location);
+    url.searchParams.set("shape", shape);
+    window.location.href = url.toString();
+}
 </script>
-
-</body>
-</html>
 """
 
-selected = components.html(html_code, height=260)
-
-# -----------------------
-# Update session state
-# -----------------------
-if selected:
-    st.session_state.selected_shape = selected
+components.html(html, height=270)
 
 selected_shape = st.session_state.selected_shape
 N = shape_data[selected_shape]["turns"]
 
 st.write("Selected Shape:", selected_shape)
 st.write("Turns Applied:", N)
+
 # -----------------------
-# Calculations (UNCHANGED)
+# Calculations
 # -----------------------
 v = st.session_state.speed
 w = st.session_state.width
@@ -202,6 +192,7 @@ A_real = A_ideal * (efficiency_per_turn ** N)
 # -----------------------
 # Output
 # -----------------------
+st.divider()
 st.subheader("📊 Results")
 
 c1, c2 = st.columns(2)
@@ -214,16 +205,3 @@ st.caption(
     "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
     "Turn loss fixed at 2% per turn."
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
