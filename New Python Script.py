@@ -74,14 +74,13 @@ synced_input("Swath width (m)", "width", 0.5, 15.0, 0.1)
 synced_input("Flow rate (kg/min)", "flow", 0.1, 20.0, 0.001, "%.4f")
 synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
 
-st.divider()
-
 import streamlit as st
 import streamlit.components.v1 as components
 import base64
+import json
 
 # -----------------------
-# Helper to load image as base64
+# Helper: Convert image to base64
 # -----------------------
 def get_base64_image(path):
     with open(path, "rb") as f:
@@ -100,16 +99,19 @@ shape_data = {
 if "selected_shape" not in st.session_state:
     st.session_state.selected_shape = "Square"
 
-# Convert images to base64
+# Encode images
 images = {
     name: get_base64_image(data["file"])
     for name, data in shape_data.items()
 }
 
 # -----------------------
-# HTML + JS Component
+# HTML Component
 # -----------------------
 html_code = f"""
+<!DOCTYPE html>
+<html>
+<head>
 <style>
 .container {{
     display: flex;
@@ -136,6 +138,8 @@ html_code = f"""
     font-weight: 500;
 }}
 </style>
+</head>
+<body>
 
 <div class="container">
 """
@@ -149,27 +153,31 @@ for name, img in images.items():
     </div>
     """
 
-html_code += """
+html_code += f"""
 </div>
 
 <script>
-function selectShape(shape) {
-    const url = new URL(window.location);
-    url.searchParams.set("shape", shape);
-    window.location = url;
-}
+const streamlit = window.parent;
+
+function selectShape(shape) {{
+    streamlit.postMessage({{
+        type: "streamlit:setComponentValue",
+        value: shape
+    }}, "*");
+}}
 </script>
+
+</body>
+</html>
 """
 
-components.html(html_code, height=250)
+selected = components.html(html_code, height=260)
 
 # -----------------------
-# Capture selection from URL
+# Update session state
 # -----------------------
-query_params = st.query_params
-
-if "shape" in query_params:
-    st.session_state.selected_shape = query_params["shape"]
+if selected:
+    st.session_state.selected_shape = selected
 
 selected_shape = st.session_state.selected_shape
 N = shape_data[selected_shape]["turns"]
@@ -206,6 +214,7 @@ st.caption(
     "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
 
 
 
