@@ -2,151 +2,147 @@ import streamlit as st
 
 st.set_page_config(page_title="Agri Drone Area Calculator", layout="centered")
 st.title("🚁 Agricultural Drone Area Coverage Calculator")
-st.caption("Single-turn efficiency model (Turn loss fixed at 2%)")
+st.caption("Nozzle-based spreading model (Turn loss fixed at 2%)")
 
 st.divider()
 
-# -----------------------
-# Defaults
-# -----------------------
-defaults = {
-    "speed": 5.0,
-    "width": 5.5,
-    "flow": 3.0,
-    "tank": 10.0,
-}
-
-for k, v in defaults.items():
-    st.session_state.setdefault(k, v)
-    st.session_state.setdefault(f"{k}_slider", v)
-    st.session_state.setdefault(f"{k}_input", v)
-
-if "selected_shape" not in st.session_state:
-    st.session_state.selected_shape = "Square"
+TURN_LOSS = 0.02
+ACRE_M2 = 4046.86
 
 # -----------------------
-# Sync functions
+# Nozzle Selection
 # -----------------------
-def slider_changed(name):
-    val = st.session_state[f"{name}_slider"]
-    st.session_state[name] = val
-    st.session_state[f"{name}_input"] = val
+st.subheader("🧪 Select Nozzle Type")
 
-def input_changed(name):
-    val = st.session_state[f"{name}_input"]
-    st.session_state[name] = val
-    st.session_state[f"{name}_slider"] = val
+if "selected_nozzle" not in st.session_state:
+    st.session_state.selected_nozzle = "Centrifugal"
 
-# -----------------------
-# Synced input widget
-# -----------------------
-def synced_input(label, name, minv, maxv, step, fmt=None):
-    c1, c2 = st.columns([2, 1])
-    with c1:
-        st.slider(
-            label,
-            min_value=minv,
-            max_value=maxv,
-            step=step,
-            value=st.session_state[name],
-            key=f"{name}_slider",
-            on_change=slider_changed,
-            args=(name,)
-        )
-    with c2:
-        st.number_input(
-            " ",
-            min_value=minv,
-            max_value=maxv,
-            step=step,
-            format=fmt,
-            value=st.session_state[name],
-            key=f"{name}_input",
-            on_change=input_changed,
-            args=(name,)
-        )
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("🔘 Centrifugal Nozzle", use_container_width=True):
+        st.session_state.selected_nozzle = "Centrifugal"
+
+with col2:
+    if st.button("🔘 Flat Fan Nozzle", use_container_width=True):
+        st.session_state.selected_nozzle = "Flat Fan"
+
+selected_nozzle = st.session_state.selected_nozzle
+
+st.divider()
 
 # -----------------------
 # Inputs
 # -----------------------
-synced_input("Speed (m/s)", "speed", 0.5, 15.0, 0.1)
-synced_input("Swath width (m)", "width", 0.5, 15.0, 0.1)
-synced_input("Flow rate (kg/min)", "flow", 0.1, 20.0, 0.001, "%.4f")
-synced_input("Total Dispense weight (kg)", "tank", 1.0, 50.0, 0.5)
+
+dispense_per_acre = st.number_input(
+    "Dispense weight per acre (kg)",
+    min_value=1.0,
+    max_value=200.0,
+    value=25.0,
+    step=1.0
+)
+
+acres = st.number_input(
+    "Number of acres",
+    min_value=0.1,
+    max_value=50.0,
+    value=1.0,
+    step=0.1
+)
+
+# Total weight (auto calculated)
+total_dispense = dispense_per_acre * acres
+
+st.metric("Total Dispense Weight (kg)", f"{round(total_dispense,1)}")
 
 st.divider()
 
 # -----------------------
-# Shape Selection (Instant Update Fix)
+# Altitude Selection
 # -----------------------
-st.subheader("🗺 Select Field Shape")
+st.subheader("📏 Select Altitude (m)")
 
-shape_data = {
-    "Square": {"file": "square.png", "turns": 16},
-    "Rectangle": {"file": "rectangle.png", "turns": 12},
-    "Skewed": {"file": "skewed.png", "turns": 11},
-    "L Shape": {"file": "lshape.png", "turns": 18},
-}
+altitudes = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+cols = st.columns(len(altitudes))
 
-shape_names = list(shape_data.keys())
-
-# ---- HANDLE CLICK FIRST ----
-for shape in shape_names:
-    if st.session_state.get(f"clicked_{shape}", False):
-        st.session_state.selected_shape = shape
-        st.session_state[f"clicked_{shape}"] = False
-
-# ---- RENDER UI ----
-cols = st.columns(len(shape_names))
-
-for shape, col in zip(shape_names, cols):
+for alt, col in zip(altitudes, cols):
     with col:
+        if st.button(f"{alt}m"):
+            st.session_state.selected_altitude = alt
 
-        is_selected = st.session_state.selected_shape == shape
-        circle = "🔴" if is_selected else "⚪"
+if "selected_altitude" not in st.session_state:
+    st.session_state.selected_altitude = 2.0
 
-        if st.button(
-            f"{circle}  {shape}",
-            key=f"btn_{shape}",
-            use_container_width=True
-        ):
-            st.session_state[f"clicked_{shape}"] = True
+st.caption(f"Selected Altitude: {st.session_state.selected_altitude} m")
 
-        st.image(shape_data[shape]["file"], width=130)
+# -----------------------
+# Discharge % Selection
+# -----------------------
+st.subheader("💧 Select Discharge Rate (%)")
 
-# Apply turns
-selected_shape = st.session_state.selected_shape
-N = shape_data[selected_shape]["turns"]
+rates = [30, 40, 50, 60, 70, 80, 90, 100]
+cols = st.columns(len(rates))
 
-st.caption(f"Turns Applied: {N}")
+for r, col in zip(rates, cols):
+    with col:
+        if st.button(f"{r}%"):
+            st.session_state.selected_rate = r
+
+if "selected_rate" not in st.session_state:
+    st.session_state.selected_rate = 50
+
+st.caption(f"Selected Discharge Setting: {st.session_state.selected_rate}%")
+
+st.divider()
+
+# -----------------------
+# Nozzle-Based Constants (For Now Fixed)
+# -----------------------
+if selected_nozzle == "Centrifugal":
+    SWATH_WIDTH = 5.5
+    FLOW_RATE = 3.0
+else:
+    SWATH_WIDTH = 4.0
+    FLOW_RATE = 2.307
+
 # -----------------------
 # Calculations
 # -----------------------
-v = st.session_state.speed
-w = st.session_state.width
-flow = st.session_state.flow
-tank = st.session_state.tank
 
-turn_loss_percent = 2.0
-efficiency_per_turn = 1 - (turn_loss_percent / 100)
+# Spray time (seconds)
+t_spray = (total_dispense / FLOW_RATE) * 60
 
-t_spray = (tank / flow) * 60
-A_ideal = (v * w * t_spray) / 4046.86
-A_real = A_ideal * (efficiency_per_turn ** N)
+# Ideal area
+A_ideal = (SWATH_WIDTH * t_spray)  # m² (before speed)
+
+# Real area needed
+A_real_m2 = acres * ACRE_M2
+
+# Apply turn efficiency
+efficiency_factor = (1 - TURN_LOSS)
+# Solve for speed:
+# A_real = (v × SWATH × t) × efficiency^N
+# v = A_real / (SWATH × t × efficiency^N)
+
+# For simplicity assume 12 turns default
+N = 12
+
+v_required = A_real_m2 / (SWATH_WIDTH * t_spray * (efficiency_factor ** N))
+
+v_required = round(v_required, 1)
 
 # -----------------------
 # Output
 # -----------------------
 st.subheader("📊 Results")
 
-c1, c2 = st.columns(2)
-
-with c2:
-    st.metric("Actual Area (acre)", f"{A_real:.4f}")
+st.metric("Required Speed (m/s)", f"{v_required}")
+st.metric("Swath Width (m)", f"{SWATH_WIDTH}")
 
 st.caption(
     "Model:\n"
-    "A_real = A_ideal × (1 - 0.02) ^ N\n\n"
+    "Total Weight = kg/acre × acres\n"
+    "Speed = Area / (Swath × SprayTime × TurnEfficiency)\n\n"
     "Turn loss fixed at 2% per turn."
 )
-
