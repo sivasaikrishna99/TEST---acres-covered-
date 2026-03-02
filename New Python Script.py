@@ -103,6 +103,9 @@ st.divider()
 # -----------------------
 # Altitude & Discharge Selection (with indicator)
 # -----------------------
+# -----------------------
+# Altitude Selection (Radio)
+# -----------------------
 st.subheader("📏 Select Altitude (m)")
 
 altitudes = [1.5, 2, 2.5, 3, 3.5, 4]
@@ -110,18 +113,16 @@ altitudes = [1.5, 2, 2.5, 3, 3.5, 4]
 if "selected_altitude" not in st.session_state:
     st.session_state.selected_altitude = 2
 
-cols = st.columns(len(altitudes))
+st.session_state.selected_altitude = st.radio(
+    "",
+    altitudes,
+    index=altitudes.index(st.session_state.selected_altitude),
+    horizontal=True
+)
 
-for alt, col in zip(altitudes, cols):
-    with col:
-        is_selected = st.session_state.selected_altitude == alt
-        circle = "🔴" if is_selected else "⚪"
-
-        if st.button(f"{circle} {alt}m", key=f"alt_{alt}"):
-            st.session_state.selected_altitude = alt
-
-st.divider()
-
+# -----------------------
+# Discharge Rate Selection (Radio)
+# -----------------------
 st.subheader("💧 Select Discharge Rate (%)")
 
 rates = [30, 40, 50, 60, 70, 80, 90, 100]
@@ -129,17 +130,12 @@ rates = [30, 40, 50, 60, 70, 80, 90, 100]
 if "selected_rate" not in st.session_state:
     st.session_state.selected_rate = 50
 
-cols = st.columns(len(rates))
-
-for r, col in zip(rates, cols):
-    with col:
-        is_selected = st.session_state.selected_rate == r
-        circle = "🔴" if is_selected else "⚪"
-
-        if st.button(f"{circle} {r}%", key=f"rate_{r}"):
-            st.session_state.selected_rate = r
-
-st.divider()
+st.session_state.selected_rate = st.radio(
+    "",
+    rates,
+    index=rates.index(st.session_state.selected_rate),
+    horizontal=True
+)
 
 # -----------------------
 # Shape Selection (UNCHANGED)
@@ -228,6 +224,7 @@ st.caption(
     "Speed = Area / (Swath × SprayTime × TurnEfficiency)\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
 
 
 
