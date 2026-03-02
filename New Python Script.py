@@ -149,7 +149,7 @@ st.subheader("🗺 Select Field Shape")
 shape_data = {
     "Square": {"file": "square.png", "turns": 16},
     "Rectangle": {"file": "rectangle.png", "turns": 12},
-    "Skewed": {"file": "skewed.png", "turns": 11},
+    "Skewed": {"file": "skewed.png", "turns": 10},
     "L Shape": {"file": "lshape.png", "turns": 18},
 }
 
@@ -228,4 +228,5 @@ st.caption(
     "Speed = Area / (Swath × SprayTime × TurnEfficiency)\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
 
