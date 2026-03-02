@@ -122,7 +122,7 @@ st.radio(
     rates,
     key="selected_rate",
     horizontal=True
-
+)
 # -----------------------
 # Shape Selection (UNCHANGED)
 # -----------------------
@@ -210,6 +210,7 @@ st.caption(
     "Speed = Area / (Swath × SprayTime × TurnEfficiency)\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
 
 
 
