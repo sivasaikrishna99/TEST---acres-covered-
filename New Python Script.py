@@ -193,13 +193,13 @@ else:
     SWATH_WIDTH = 4.0
     FLOW_RATE = 2.307
 
-TURN_LOSS = 0.02
+TURN_LOSS = 0.00
 ACRE_M2 = 4046.86
 
 # -----------------------
 # Calculations
 # -----------------------
-t_spray = (total_dispense / FLOW_RATE) * 60
+t_spray = ((total_dispense / FLOW_RATE) * 60) - (N * 3)
 
 A_ideal = (SWATH_WIDTH * t_spray) / ACRE_M2
 
@@ -228,3 +228,4 @@ st.caption(
     "Speed = Area / (Swath × SprayTime × TurnEfficiency)\n\n"
     "Turn loss fixed at 2% per turn."
 )
+
